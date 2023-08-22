@@ -6,12 +6,22 @@ import matplotlib.pyplot as plt
 import csv
 import os
 
-epochs = 100
+epochs = 10
 batch_size = 1
 learning_rate = 0.01
 l1_penalty = 0 # coefficient of penalty of weights
 
-directory = 'Models/lasso_test/'
+directory = 'Models/lasso_firstsim/'
+
+def r_correlation(tensor1, tensor2):
+    if tensor1.shape != tensor2.shape:
+        raise ValueError("Tensors must have the same shape")
+    tensor1_mean = torch.mean(tensor1)
+    tensor2_mean = torch.mean(tensor2)
+    tensor1_centered = tensor1 - tensor1_mean
+    tensor2_centered = tensor2 - tensor2_mean
+    correlation = torch.sum(tensor1_centered * tensor2_centered) / (torch.sqrt(torch.sum(tensor1_centered ** 2)) * torch.sqrt(torch.sum(tensor2_centered ** 2)))
+    return correlation
 
 def train_test_split(X, y, test_size=0.2, random_state=None):
     # Set the seed for reproducibility
@@ -69,6 +79,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
 
     for epoch in range(epochs):
         # Training
+        print("train")
         model.train()
         batch_trainlosses = []
         for X_batch, y_batch in get_batches(X_train, y_train, batch_size):
@@ -80,6 +91,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
             batch_trainlosses.append(loss.item())
         train_losses.append(np.mean(batch_trainlosses))
 
+        print("val")
         # Validation
         model.eval()
         batch_vallosses = []
@@ -125,18 +137,20 @@ def plot_losses(filepath):
 
 def main():
     # Load data
-    data = np.loadtxt(directory + 'data.txt')
+    data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
 
     # Separate features and target
-    X = data[:, :-1]
-    y = data[:, -1]
-
+    X = data[:, :-2]
+    y_measured = data[:, -1]
+    y_true = data[:,-2]
+    
     # Convert numpy arrays to PyTorch tensors
     X = torch.from_numpy(X).float() # assuming data is in float format
-    y = torch.from_numpy(y).float()
+    y_measured = torch.from_numpy(y_measured).float()
+    y_true = torch.from_numpy(y_true).float()
 
     # Split data
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(X, y_measured, test_size=0.2, random_state=42)
 
     # Load model
     model = LassoRegression(X.shape[1], l1_penalty=l1_penalty)
@@ -153,6 +167,11 @@ def main():
     save_losses_to_csv(train_losses, val_losses, directory + 'losses.csv')
     
     plot_losses(directory + 'losses.csv')
+    
+    
+    print(r_correlation(y_measured,y_true))
+    print(r_correlation(model(X),y_measured))
+    print(r_correlation(model(X),y_true))
     
     print(model.generate(torch.ones(2000)))
     
