@@ -3,12 +3,13 @@ import torch.nn as nn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 import csv
 import os
 
-epochs = 10
-batch_size = 1
-learning_rate = 0.01
+epochs = 50
+batch_size = 32
+learning_rate = 0.0003
 l1_penalty = 0 # coefficient of penalty of weights
 
 directory = 'Models/lasso_firstsim/'
@@ -21,7 +22,7 @@ def r_correlation(tensor1, tensor2):
     tensor1_centered = tensor1 - tensor1_mean
     tensor2_centered = tensor2 - tensor2_mean
     correlation = torch.sum(tensor1_centered * tensor2_centered) / (torch.sqrt(torch.sum(tensor1_centered ** 2)) * torch.sqrt(torch.sum(tensor2_centered ** 2)))
-    return correlation
+    return correlation.item()
 
 def train_test_split(X, y, test_size=0.2, random_state=None):
     # Set the seed for reproducibility
@@ -138,7 +139,6 @@ def plot_losses(filepath):
 def main():
     # Load data
     data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
-    data = data[1500:]
 
     # Separate features and target
     X = data[:, :-2]
@@ -169,12 +169,12 @@ def main():
     
     plot_losses(directory + 'losses.csv')
     
-    print(y_measured[:10])
-    print(y_true[:10])
-    print(model(X[:10]))
-    print(r_correlation(y_measured,y_true))
-    print(r_correlation(model(X),y_measured))
-    print(r_correlation(model(X),y_true))
+    phen_gen = r_correlation(y_measured,y_true)
+    predgen_phen = r_correlation(model(X),y_measured)
+    predgen_gen = r_correlation(model(X),y_true)
+    print("r, r^2 between genotype and phenotype:", phen_gen, phen_gen ** 2)
+    print("r, r^2 between predicted phenotype and phenotype:", predgen_phen, predgen_phen ** 2)
+    print("r, r^2 between predicted phenotype and genotype:", predgen_gen, predgen_gen ** 2)
     
     print(model.generate(torch.ones(2000)))
     
