@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import csv
 import os
 
-epochs = 1000
-batch_size = 2
+epochs = 100
+batch_size = 1
 learning_rate = 0.01
-l1_penalty = 0.00 # coefficient of penalty of weights
+l1_penalty = 0 # coefficient of penalty of weights
 
 directory = 'Models/lasso_test/'
 
@@ -70,22 +70,25 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
     for epoch in range(epochs):
         # Training
         model.train()
-        batch_losses = []
+        batch_trainlosses = []
         for X_batch, y_batch in get_batches(X_train, y_train, batch_size):
             y_pred = model(X_batch)
             loss = model.lasso_loss(y_pred, y_batch)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            batch_losses.append(loss.item())
-        train_losses.append(np.mean(batch_losses))
+            batch_trainlosses.append(loss.item())
+        train_losses.append(np.mean(batch_trainlosses))
 
         # Validation
         model.eval()
+        batch_vallosses = []
         with torch.no_grad():
-            y_pred = model(X_val)
-            loss = model.lasso_loss(y_pred, y_val)
-            val_losses.append(loss.item())
+            for X_valbatch, y_valbatch in get_batches(X_val, y_val, batch_size):
+                y_pred = model(X_valbatch)
+                loss = model.lasso_loss(y_pred, y_valbatch)
+                batch_vallosses.append(loss.item())
+            val_losses.append(np.mean(batch_vallosses))
 
         print(f'Epoch {epoch+1}/{epochs} => Train Loss: {train_losses[-1]}, Val Loss: {val_losses[-1]}')
 
@@ -151,7 +154,7 @@ def main():
     
     plot_losses(directory + 'losses.csv')
     
-    print(model.generate([1,2,300]))
+    print(model.generate(torch.ones(2000)))
     
 
 if __name__ == '__main__':
