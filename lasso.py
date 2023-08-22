@@ -11,6 +11,8 @@ batch_size = 2
 learning_rate = 0.01
 l1_penalty = 0.00 # coefficient of penalty of weights
 
+directory = 'Models/lasso_test/'
+
 def train_test_split(X, y, test_size=0.2, random_state=None):
     # Set the seed for reproducibility
     if random_state is not None:
@@ -120,7 +122,7 @@ def plot_losses(filepath):
 
 def main():
     # Load data
-    data = np.loadtxt('data.txt')
+    data = np.loadtxt(directory + 'data.txt')
 
     # Separate features and target
     X = data[:, :-1]
@@ -135,19 +137,19 @@ def main():
 
     # Load model
     model = LassoRegression(X.shape[1], l1_penalty=l1_penalty)
-    if os.path.isfile('model.pth') and input("load model: y/n") == 'y':
-        model.load_state_dict(torch.load('model.pth'))
+    if os.path.isfile(directory + 'model.pth') and input("load model: y/n") == 'y':
+        model.load_state_dict(torch.load(directory + 'model.pth'))
 
     # Train model
     train_losses, val_losses = train(model, X_train, y_train, X_val, y_val, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate)
 
     # Save model
-    torch.save(model.state_dict(), 'model.pth')
+    torch.save(model.state_dict(), directory + 'model.pth')
 
     # Save losses to csv
-    save_losses_to_csv(train_losses, val_losses, 'losses.csv')
+    save_losses_to_csv(train_losses, val_losses, directory + 'losses.csv')
     
-    plot_losses('losses.csv')
+    plot_losses(directory + 'losses.csv')
     
     print(model.generate([1,2,300]))
     
