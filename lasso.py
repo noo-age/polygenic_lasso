@@ -138,6 +138,7 @@ def plot_losses(filepath):
 def main():
     # Load data
     data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
+    data = data[1500:]
 
     # Separate features and target
     X = data[:, :-2]
@@ -168,7 +169,9 @@ def main():
     
     plot_losses(directory + 'losses.csv')
     
-    
+    print(y_measured[:10])
+    print(y_true[:10])
+    print(model(X[:10]))
     print(r_correlation(y_measured,y_true))
     print(r_correlation(model(X),y_measured))
     print(r_correlation(model(X),y_true))
