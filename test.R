@@ -1,4 +1,4 @@
-data <- read.table("sim1_out.ped",stringsAsFactors = FALSE)
+data <- read.table("mydata.ped",stringsAsFactors = FALSE)
 
 genotypes <- as.matrix(data[,7:ncol(data)])
 
@@ -13,6 +13,6 @@ genotype_scores <- genotypes %*% effect_sizes
 
 phenotypes <- genotype_scores + rnorm(nrow(genotypes))
 
-data <- cbind(genotypes,phenotypes)
+data <- cbind(genotypes,genotype_scores,phenotypes)
 
-write.table(data, "mydata_with_phenotypes.txt",sep="\t",row.names=FALSE,col.names=FALSE)
+write.table(data, "data.txt",sep="\t",row.names=FALSE,col.names=FALSE)
