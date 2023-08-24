@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import math
 import csv
 import os
@@ -153,7 +154,6 @@ def plot_losses(filepath):
     # Display the plot
     plt.show()
 
-
 def plot_correlation(filepath):
     # Read csv file
     data = pd.read_csv(filepath)
@@ -167,6 +167,15 @@ def plot_correlation(filepath):
     plt.title('Predicted vs Actual Trait')
 
     # Show the plot
+    plt.show()
+
+def plot_distribution(scores):
+    plt.figure(figsize=(10,6))
+    sns.distplot(scores, hist = False, kde = True, 
+                 kde_kws = {'shade': True, 'linewidth': 3})
+    plt.title('Distribution of scores')
+    plt.xlabel('Score')
+    plt.ylabel('Density')
     plt.show()
 
 def main():
@@ -207,6 +216,12 @@ def main():
     # Plot losses and pred|actual pairs to csv
     plot_losses(directory + 'losses.csv')
     plot_correlation(directory + 'correlation.csv')
+    
+    # Plot measured phenotype
+    plot_distribution(y_measured)
+    
+    # Plot "true" phenotype as expected from genotype
+    plot_distribution(y_true)
     
     phen_gen = r_correlation(y_measured,y_true)
     predgen_phen = r_correlation(model(X),y_measured)
