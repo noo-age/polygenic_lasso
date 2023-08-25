@@ -8,6 +8,21 @@ import math
 import csv
 import os
 
+directory = 'Models/lasso_firstsim/'
+iters = 5 # iterates through losses_0.csv, etc.
+
+data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
+
+# Separate features and target
+X = data[:, :-2]
+y_measured = data[:, -1]
+y_true = data[:,-2]
+
+# Convert numpy arrays to PyTorch tensors
+X = torch.from_numpy(X).float() # assuming data is in float format
+y_measured = torch.from_numpy(y_measured).float()
+y_true = torch.from_numpy(y_true).float()
+
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
         raise ValueError("Tensors must have the same shape")
@@ -46,7 +61,7 @@ def plot_correlation(filepath):
     plt.title('Predicted vs Actual Trait')
 
     # Show the plot
-    plt.show()
+    plt.show(block=False)
 
 def plot_distribution(scores):
     plt.figure(figsize=(10,6))
@@ -55,7 +70,7 @@ def plot_distribution(scores):
     plt.title('Distribution of scores')
     plt.xlabel('Score')
     plt.ylabel('Density')
-    plt.show()
+    plt.show(block=False)
     
 def plot_losses(filepath):
     data = pd.read_csv(filepath)
@@ -82,32 +97,28 @@ def plot_losses(filepath):
     plt.legend()
     
     # Display the plot
-    plt.show()
+    plt.show(block=False)
 
 def main():
-    directory = 'Models/lasso_firstsim/'
-    data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
     
-    # Separate features and target
-    X = data[:, :-2]
-    y_measured = data[:, -1]
-    y_true = data[:,-2]
-
-    # Convert numpy arrays to PyTorch tensors
-    X = torch.from_numpy(X).float() # assuming data is in float format
-    y_measured = torch.from_numpy(y_measured).float()
-    y_true = torch.from_numpy(y_true).float()
-
-    # Plot losses and pred|actual pairs to csv
-    plot_losses(directory + 'losses.csv')
-    plot_correlation(directory + 'correlation.csv')
-
-    # Plot measured phenotype
-    print("mean", torch.mean(y_measured))
-    print("sd", torch.std(y_measured))
-    plot_distribution(y_measured)
-
     # Plot "true" phenotype as expected from genotype
     print("mean", torch.mean(y_true))
     print("sd", torch.std(y_true))
     plot_distribution(y_true)
+    
+    # Plot measured phenotype
+    print("mean", torch.mean(y_measured))
+    print("sd", torch.std(y_measured))
+    plot_distribution(y_measured)
+        
+    for i in range(iters):
+        # Plot losses and pred|actual pairs to csv
+        plot_losses(directory + f'losses_{i}.csv')
+        plot_correlation(directory + f'correlation_{i}.csv')
+
+        
+
+        
+    
+if __name__ == '__main__':
+    main()
