@@ -1,8 +1,8 @@
 # polygenic_lasso
 
-This repository aims to model how noise from tests of fluid intelligence affects polygenic predictor models. 
+This repository aims to model how noisy phenotype measurements affect polygenic predictor models. 
 
-Empirical measurements of the reliability coefficient and standard measurement of error (SEM) are used to determine the noise function applied to a simulated genotype|phenotype dataset.
+Empirical estimations of conditional standard error of measurement will be used to determine the noise function applied to a simulated genotype|phenotype dataset with a given genetic heritability.
 
 The final simulated dataset will aim to have ~10k causal SNPs with additive linear effects hidden among ~5 million total SNPs. The minor allele frequencies (MAFs) of the SNPs will follow approximately the human distribution.
 
