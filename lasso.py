@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import visualize_data as vd
 import math
 import csv
 import os
 
-epochs = 500
+epochs = 200
 batch_size = 32
-learning_rate = 0.0001
+learning_rate = 0.0003
 l1_penalty = 0.1 # coefficient of penalty of weights
 val_size = 0.2
 
@@ -112,72 +113,6 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
 
     return train_losses, val_losses
 
-def save_losses_to_csv(train_losses, val_losses, filename):
-    with open(filename, 'a', newline='') as f:
-        writer = csv.writer(f)
-        if os.stat(filename).st_size == 0:
-            writer.writerow(['train_loss', 'val_loss'])
-        for i in range(len(train_losses)):
-            writer.writerow([train_losses[i], val_losses[i]])
-
-def save_correlation_to_csv(predicted, actual, filename):
-    with open(filename, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['predicted trait', 'actual trait'])
-        for i in range(len(predicted)):
-            writer.writerow([predicted[i].item(), actual[i].item()])
-
-def plot_losses(filepath):
-    data = pd.read_csv(filepath)
-    
-    # Get the labels from the first row of the data
-    labels = data.columns
-    
-    for label in labels:
-        # Skip the label if it is not numeric
-        if not pd.to_numeric(data[label], errors='coerce').notnull().all():
-            continue
-        
-        # Plot the data for the label
-        plt.plot(data[label], label=label)
-    
-    # Labels for x and y axes
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    
-    # Title of the graph
-    plt.title('Losses')
-    
-    # Show legend
-    plt.legend()
-    
-    # Display the plot
-    plt.show()
-
-def plot_correlation(filepath):
-    # Read csv file
-    data = pd.read_csv(filepath)
-    
-    # Plot the data
-    plt.plot(data['predicted trait'], data['actual trait'], 'o')
-    
-    # Setting labels and title
-    plt.xlabel('Predicted Trait')
-    plt.ylabel('Actual Trait')
-    plt.title('Predicted vs Actual Trait')
-
-    # Show the plot
-    plt.show()
-
-def plot_distribution(scores):
-    plt.figure(figsize=(10,6))
-    sns.distplot(scores, hist = False, kde = True, 
-                 kde_kws = {'shade': True, 'linewidth': 3})
-    plt.title('Distribution of scores')
-    plt.xlabel('Score')
-    plt.ylabel('Density')
-    plt.show()
-
 def main():
     # Load data
     data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
@@ -207,21 +142,21 @@ def main():
     torch.save(model.state_dict(), directory + 'model.pth')
 
     # Save losses and pred|actual pairs to csv
-    save_losses_to_csv(train_losses, val_losses, directory + 'losses.csv')
-    save_correlation_to_csv(model(X), y_measured, directory + 'correlation.csv')
+    vd.save_losses_to_csv(train_losses, val_losses, directory + 'losses.csv')
+    vd.save_correlation_to_csv(model(X), y_measured, directory + 'correlation.csv')
     
     # Print model weights
     model.print_weights()
     
     # Plot losses and pred|actual pairs to csv
-    plot_losses(directory + 'losses.csv')
-    plot_correlation(directory + 'correlation.csv')
+    vd.plot_losses(directory + 'losses.csv')
+    vd.plot_correlation(directory + 'correlation.csv')
     
     # Plot measured phenotype
-    plot_distribution(y_measured)
+    vd.plot_distribution(y_measured)
     
     # Plot "true" phenotype as expected from genotype
-    plot_distribution(y_true)
+    vd.plot_distribution(y_true)
     
     phen_gen = r_correlation(y_measured,y_true)
     predgen_phen = r_correlation(model(X),y_measured)
