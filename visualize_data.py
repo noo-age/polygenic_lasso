@@ -70,7 +70,7 @@ def plot_distribution(scores):
     plt.title('Distribution of scores')
     plt.xlabel('Score')
     plt.ylabel('Density')
-    plt.show(block=False)
+    plt.show()
     
 def plot_losses(filepath):
     data = pd.read_csv(filepath)
@@ -97,10 +97,10 @@ def plot_losses(filepath):
     plt.legend()
     
     # Display the plot
-    plt.show(block=False)
+    plt.show()
 
 def main():
-    
+    '''
     # Plot "true" phenotype as expected from genotype
     print("mean", torch.mean(y_true))
     print("sd", torch.std(y_true))
@@ -110,6 +110,7 @@ def main():
     print("mean", torch.mean(y_measured))
     print("sd", torch.std(y_measured))
     plot_distribution(y_measured)
+    '''
         
     for i in range(iters):
         # Plot losses and pred|actual pairs to csv
