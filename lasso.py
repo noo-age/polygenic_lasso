@@ -12,7 +12,7 @@ import os
 epochs = 50
 batch_size = 32
 learning_rate = 0.0003
-#l1_penalty = 0.1 # coefficient of penalty of weights
+l1_penalty = 0.1 # coefficient of penalty of weights
 val_size = 0.2
 
 directory = 'Models/lasso_firstsim/'
@@ -149,7 +149,7 @@ def main(l1_penalty, i):
     # Print model weights
     model.print_weights()
 
-    '''
+    
     # Plot losses and pred|actual pairs to csv
     vd.plot_losses(directory + f'losses_{i}.csv')
     vd.plot_correlation(directory + f'correlation_{i}.csv')
@@ -167,7 +167,7 @@ def main(l1_penalty, i):
     print("r, r^2 between genotype and phenotype:", phen_gen, phen_gen ** 2)
     print("r, r^2 between predicted phenotype and phenotype:", predgen_phen, predgen_phen ** 2)
     print("r, r^2 between predicted phenotype and genotype:", predgen_gen, predgen_gen ** 2)
-    '''
+    
     
 if __name__ == '__main__':
     main(l1_penalty, 0)
