@@ -1,4 +1,5 @@
-*.txt
+Models/*/*.txt
+Models/*.txt
 *.ped
 *.bed
 data/*
