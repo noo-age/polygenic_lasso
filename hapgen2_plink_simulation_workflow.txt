@@ -1,3 +1,6 @@
+# Taken from https://github.com/HannahVMeyer/PhenotypeSimulator/blob/master/vignettes/Simulation-and-LinearModel.Rmd
+
+
 # set directory variables
 dir=~/code/polygenic_lasso/data
 hapdir=$dir/ALL_1000G_phase1integrated_v3_impute
