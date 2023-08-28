@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
+from pysnptools.snpreader import Bed
 import matplotlib.pyplot as plt
 import seaborn as sns
 import visualize_data as vd
@@ -12,8 +13,9 @@ import os
 epochs = 50
 batch_size = 32
 learning_rate = 0.0003
-l1_penalty = 0.01 # coefficient of penalty of weights
+l1_penalties = [0.001, 0.01, 0.1] # coefficient of penalty of weights
 val_size = 0.2
+k = 3 # k-fold cross validation
 
 directory = 'Models/lasso_firstsim/'
 
@@ -126,48 +128,49 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
 
     return train_losses, val_losses
 
-def main(l1_penalty, i):
-    # Split data
-    X_train, X_val, y_train, y_val = train_test_split(X, y_measured, test_size=val_size, random_state=41)
+def main():
+    for i in range(k):
+        # Split data
+        X_train, X_val, y_train, y_val = train_test_split(X, y_measured, test_size=val_size, random_state=41)
 
-    # Load model
-    model = LassoRegression(X.shape[1], l1_penalty=l1_penalty)
-    model_file = directory + f'model_{i}.pth'
-    if os.path.isfile(model_file) and input("load model: y/n") == 'y':
-        model.load_state_dict(torch.load(model_file))
+        # Load model
+        model = LassoRegression(X.shape[1], l1_penalty=l1_penalties[i])
+        model_file = directory + f'model_{i}.pth'
+        if os.path.isfile(model_file) and input("load model: y/n") == 'y':
+            model.load_state_dict(torch.load(model_file))
 
-    # Train model
-    train_losses, val_losses = train(model, X_train, y_train, X_val, y_val, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate)
+        # Train model
+        train_losses, val_losses = train(model, X_train, y_train, X_val, y_val, epochs=epochs, batch_size=batch_size, learning_rate=learning_rate)
 
-    # Save model
-    torch.save(model.state_dict(), model_file)
+        # Save model
+        torch.save(model.state_dict(), model_file)
 
-    # Save losses and pred|actual pairs to csv
-    vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{i}.csv')
-    vd.save_correlation_to_csv(model(X), y_measured, directory + f'correlation_{i}.csv')
+        # Save losses and pred|actual pairs to csv
+        vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{i}.csv')
+        vd.save_correlation_to_csv(model(X), y_measured, directory + f'correlation_{i}.csv')
 
-    # Print model weights
-    model.print_weights()
+        # Print model weights
+        model.print_weights()
 
-    
-    # Plot losses and pred|actual pairs to csv
-    vd.plot_losses(directory + f'losses_{i}.csv')
-    vd.plot_correlation(directory + f'correlation_{i}.csv')
+        
+        # Plot losses and pred|actual pairs to csv
+        vd.plot_losses(directory + f'losses_{i}.csv')
+        vd.plot_correlation(directory + f'correlation_{i}.csv')
 
-    # Plot measured phenotype
-    vd.plot_distribution(y_measured, file_name=directory + f'y_measured_{i}.png')
+        # Plot measured phenotype
+        vd.plot_distribution(y_measured, file_name=directory + f'y_measured_{i}.png')
 
-    # Plot "true" phenotype as expected from genotype
-    vd.plot_distribution(y_true, file_name=directory + f'y_true_{i}.png')
+        # Plot "true" phenotype as expected from genotype
+        vd.plot_distribution(y_true, file_name=directory + f'y_true_{i}.png')
 
-    phen_gen = r_correlation(y_measured,y_true)
-    predgen_phen = r_correlation(model(X),y_measured)
-    predgen_gen = r_correlation(model(X),y_true)
-    print(f"For iteration {i}:")
-    print("r, r^2 between genotype and phenotype:", phen_gen, phen_gen ** 2)
-    print("r, r^2 between predicted phenotype and phenotype:", predgen_phen, predgen_phen ** 2)
-    print("r, r^2 between predicted phenotype and genotype:", predgen_gen, predgen_gen ** 2)
-    
+        phen_gen = r_correlation(y_measured,y_true)
+        predgen_phen = r_correlation(model(X),y_measured)
+        predgen_gen = r_correlation(model(X),y_true)
+        print(f"For iteration {i}:")
+        print("r, r^2 between genotype and phenotype:", phen_gen, phen_gen ** 2)
+        print("r, r^2 between predicted phenotype and phenotype:", predgen_phen, predgen_phen ** 2)
+        print("r, r^2 between predicted phenotype and genotype:", predgen_gen, predgen_gen ** 2)
+        
     
 if __name__ == '__main__':
-    main(l1_penalty, 0)
+    main()
