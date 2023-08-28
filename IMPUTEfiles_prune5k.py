@@ -1,5 +1,6 @@
 import pandas as pd
 
+# Iterate over autosomal chromosomes 1-22
 for i in range(1,23):
     # Read the files
     genetic_map = pd.read_csv(f'data/ALL_1000G_phase1integrated_v3_impute/genetic_map_chr{i}_combined_b37.txt', sep=' ', skiprows=1, names=['position', 'COMBINED_rate(cM/Mb)', 'Genetic_Map(cM)'])
