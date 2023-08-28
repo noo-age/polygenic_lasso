@@ -12,7 +12,7 @@ import os
 epochs = 50
 batch_size = 32
 learning_rate = 0.0003
-l1_penalty = 0.1 # coefficient of penalty of weights
+l1_penalty = 0.01 # coefficient of penalty of weights
 val_size = 0.2
 
 directory = 'Models/lasso_firstsim/'
