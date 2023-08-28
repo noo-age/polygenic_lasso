@@ -28,17 +28,14 @@ for chr in `seq 1 22`; do
 	plink --data genotypes_chr${chr}_hapgen.controls --oxford-single-chr $chr --maf 0.01 --make-bed --out genotypes_chr${chr}_hapgen.controls
 	
 	plink --bfile genotypes_chr${chr}_hapgen.controls --indep-pairwise 50kb 5 .99 --out genotypes_chr${chr}_hapgen.controls
-	
-	
 
 	plink --bfile genotypes_chr${chr}_hapgen.controls --extract genotypes_chr${chr}_hapgen.controls.prune.in --make-bed --out genotypes_chr${chr}_hapgen.controls
 
 	echo -e "genotypes_chr${chr}_hapgen.controls" >> file_list
 done
 
-sed -i '2001,$d' genotypes_chr${chr}_hapgen.controls.prune.in #temp removed from above
-
 # Merge chromsome-wide files into a single, genome-wide file
+# Should have 67k variants under current config
 # --allow-no-sex is not in PhenotypeSimulator vignette, but doesn't work without; no missnp generated either
 plink --merge-list file_list --make-bed --allow-no-sex --out genotypes_genome_hapgen.controls
 
