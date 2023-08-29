@@ -5,4 +5,9 @@ from pandas_plink import read_plink
 genotype_df = bed.compute().T
 genotype_tensor = 2-torch.tensor(genotype_df) # read_plink encodes 0/0 homozygous reference as 2, subtraction converts to # of alternate alleles
 
-print(genotype_tensor.dtype)
+n_individuals = genotype_tensor.shape[0]
+n_SNPs = genotype_tensor.shape[1]
+
+print(n_individuals,n_SNPs)
+
+effect_sizes = torch.tensor(n_SNPs)
