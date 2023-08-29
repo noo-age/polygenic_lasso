@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
+from pandas_plink import read_plink
 from pysnptools.snpreader import Bed
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,17 +21,16 @@ k = 3 # k-fold cross validation
 directory = 'Models/lasso_firstsim/'
 
 # Load data
-data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
+(bim, fam, bed) = read_plink('data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls')
+genotype_df = bed.compute().T
+genotype_tensor = 2-torch.tensor(genotype_df)
+
+#phenotype_tensor = TODO
 
 # Separate features and target
-X = data[:, :-2]
+X = genotype_tensor
 y_measured = data[:, -1]
 y_true = data[:,-2]
-
-# Convert numpy arrays to PyTorch tensors
-X = torch.from_numpy(X).float() # assuming data is in float format
-y_measured = torch.from_numpy(y_measured).float()
-y_true = torch.from_numpy(y_true).float()
 
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
@@ -174,3 +174,4 @@ def main():
     
 if __name__ == '__main__':
     main()
+
