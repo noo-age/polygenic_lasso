@@ -17,7 +17,7 @@ batch_size = 1
 learning_rate = 0.0003
 l1_penalties = [0.001, 0.01, 0.1] # coefficient of penalty of weights
 val_size = 0.2
-k = 5 # k-fold cross validation
+k = 3 # k-fold cross validation
 
 directory = 'Models/lasso_firstsim/'
 
@@ -28,10 +28,8 @@ genotype_df = bed.compute().T
 genotype_tensor = 2-torch.tensor(genotype_df)
 '''
 genotype_tensor = torch.zeros(100,50)
-print(genotype_tensor.shape)
 
 phenotype_tensor = torch.zeros(genotype_tensor.shape[0]) #TODO
-print(phenotype_tensor.shape)
 
 dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1)
 
@@ -138,11 +136,9 @@ def main():
     
     kfold = KFold(n_splits=k, shuffle=True)
     
-    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+    for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
         # Split data
-        X_train, X_val, y_train, y_val = dataset[train_ids,:-1], dataset[train_ids,-1], dataset[test_ids,:-1], dataset[test_ids,-1]
-
-        print(X_train.shape,X_val.shape,y_train.shape,y_val.shape)
+        X_train, X_val, y_train, y_val = dataset[train_ids,:-1], dataset[val_ids,:-1], dataset[train_ids,-1], dataset[val_ids,-1]
         
         # Load model
         model = LassoRegression(n_SNPs, l1_penalty=l1_penalties[fold])
