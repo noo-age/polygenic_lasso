@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import KFold
 from pandas_plink import read_plink
 from pysnptools.snpreader import Bed
 import matplotlib.pyplot as plt
@@ -12,25 +13,30 @@ import csv
 import os
 
 epochs = 50
-batch_size = 32
+batch_size = 1
 learning_rate = 0.0003
 l1_penalties = [0.001, 0.01, 0.1] # coefficient of penalty of weights
 val_size = 0.2
-k = 3 # k-fold cross validation
+k = 5 # k-fold cross validation
 
 directory = 'Models/lasso_firstsim/'
 
 # Load data
+'''
 (bim, fam, bed) = read_plink('data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls')
 genotype_df = bed.compute().T
 genotype_tensor = 2-torch.tensor(genotype_df)
+'''
+genotype_tensor = torch.zeros(100,50)
+print(genotype_tensor.shape)
 
-#phenotype_tensor = TODO
+phenotype_tensor = torch.zeros(genotype_tensor.shape[0]) #TODO
+print(phenotype_tensor.shape)
 
-# Separate features and target
-X = genotype_tensor
-y_measured = data[:, -1]
-y_true = data[:,-2]
+dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1)
+
+n_SNPs = dataset.shape[1]-1
+n_individuals = dataset.shape[0]
 
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
@@ -129,13 +135,18 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
     return train_losses, val_losses
 
 def main():
-    for i in range(k):
+    
+    kfold = KFold(n_splits=k, shuffle=True)
+    
+    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
         # Split data
-        X_train, X_val, y_train, y_val = train_test_split(X, y_measured, test_size=val_size, random_state=41)
+        X_train, X_val, y_train, y_val = dataset[train_ids,:-1], dataset[train_ids,-1], dataset[test_ids,:-1], dataset[test_ids,-1]
 
+        print(X_train.shape,X_val.shape,y_train.shape,y_val.shape)
+        
         # Load model
-        model = LassoRegression(X.shape[1], l1_penalty=l1_penalties[i])
-        model_file = directory + f'model_{i}.pth'
+        model = LassoRegression(n_SNPs, l1_penalty=l1_penalties[fold])
+        model_file = directory + f'model_{fold}.pth'
         if os.path.isfile(model_file) and input("load model: y/n") == 'y':
             model.load_state_dict(torch.load(model_file))
 
@@ -146,30 +157,11 @@ def main():
         torch.save(model.state_dict(), model_file)
 
         # Save losses and pred|actual pairs to csv
-        vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{i}.csv')
-        vd.save_correlation_to_csv(model(X), y_measured, directory + f'correlation_{i}.csv')
+        vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{fold}.csv')
+        vd.save_correlation_to_csv(model(X_val), y_val, directory + f'correlation_{fold}.csv')
 
         # Print model weights
         model.print_weights()
-
-        
-        # Plot losses and pred|actual pairs to csv
-        vd.plot_losses(directory + f'losses_{i}.csv')
-        vd.plot_correlation(directory + f'correlation_{i}.csv')
-
-        # Plot measured phenotype
-        vd.plot_distribution(y_measured, file_name=directory + f'y_measured_{i}.png')
-
-        # Plot "true" phenotype as expected from genotype
-        vd.plot_distribution(y_true, file_name=directory + f'y_true_{i}.png')
-
-        phen_gen = r_correlation(y_measured,y_true)
-        predgen_phen = r_correlation(model(X),y_measured)
-        predgen_gen = r_correlation(model(X),y_true)
-        print(f"For iteration {i}:")
-        print("r, r^2 between genotype and phenotype:", phen_gen, phen_gen ** 2)
-        print("r, r^2 between predicted phenotype and phenotype:", predgen_phen, predgen_phen ** 2)
-        print("r, r^2 between predicted phenotype and genotype:", predgen_gen, predgen_gen ** 2)
         
     
 if __name__ == '__main__':
