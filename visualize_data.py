@@ -8,21 +8,6 @@ import math
 import csv
 import os
 
-directory = 'Models/lasso_firstsim/'
-iters = 5 # iterates through losses_0.csv, etc.
-
-data = np.loadtxt(directory + 'mydata_with_phenotypes.txt')
-
-# Separate features and target
-X = data[:, :-2]
-y_measured = data[:, -1]
-y_true = data[:,-2]
-
-# Convert numpy arrays to PyTorch tensors
-X = torch.from_numpy(X).float() # assuming data is in float format
-y_measured = torch.from_numpy(y_measured).float()
-y_true = torch.from_numpy(y_true).float()
-
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
         raise ValueError("Tensors must have the same shape")
@@ -32,6 +17,16 @@ def r_correlation(tensor1, tensor2):
     tensor2_centered = tensor2 - tensor2_mean
     correlation = torch.sum(tensor1_centered * tensor2_centered) / (torch.sqrt(torch.sum(tensor1_centered ** 2)) * torch.sqrt(torch.sum(tensor2_centered ** 2)))
     return correlation.item()
+
+def r_squared_from_file(filepath, variable1, variable2):
+    # Read the csv file
+    df = pd.read_csv(filepath)
+
+    # Convert the variables to tensors
+    tensor1 = torch.tensor(df[variable1].values)
+    tensor2 = torch.tensor(df[variable2].values)
+
+    return r_correlation(tensor1, tensor2) ** 2
 
 def save_losses_to_csv(train_losses, val_losses, filename):
     with open(filename, 'a', newline='') as f:
@@ -63,13 +58,16 @@ def plot_correlation(filepath):
     # Show the plot
     plt.show(block=False)
 
-def plot_distribution(scores):
-    plt.figure(figsize=(10,6))
-    sns.distplot(scores, hist = False, kde = True, 
-                 kde_kws = {'shade': True, 'linewidth': 3})
-    plt.title('Distribution of scores')
-    plt.xlabel('Score')
-    plt.ylabel('Density')
+def plot_distribution(filepath, variable):
+    # Read the csv file
+    df = pd.read_csv(filepath)
+
+    # Plot the distribution of the variable
+    plt.figure(figsize=(10, 6))
+    plt.hist(df[variable], bins=30, edgecolor='black')
+    plt.title('Distribution of ' + variable)
+    plt.xlabel(variable)
+    plt.ylabel('Frequency')
     plt.show()
     
 def plot_losses(filepath):
@@ -100,26 +98,14 @@ def plot_losses(filepath):
     plt.show()
 
 def main():
-    '''
-    # Plot "true" phenotype as expected from genotype
-    print("mean", torch.mean(y_true))
-    print("sd", torch.std(y_true))
-    plot_distribution(y_true)
+    plot_distribution("simulated_phenotypes.csv", "genetic_component")
+    plot_distribution("simulated_phenotypes.csv", "environmental_noise")
+    plot_distribution("simulated_phenotypes.csv", "true_phenotype")
+    plot_distribution("simulated_phenotypes.csv", "measurement_noise")
+    plot_distribution("simulated_phenotypes.csv", "observed_phenotype")
+    plot_distribution("simulated_phenotypes.csv", "maf_values")
+    print(r_squared_from_file("simulated_phenotypes.csv","genetic_component","observed_phenotype"))
     
-    # Plot measured phenotype
-    print("mean", torch.mean(y_measured))
-    print("sd", torch.std(y_measured))
-    plot_distribution(y_measured)
-    '''
-        
-    for i in range(iters):
-        # Plot losses and pred|actual pairs to csv
-        plot_losses(directory + f'losses_{i}.csv')
-        plot_correlation(directory + f'correlation_{i}.csv')
-
-        
-
-        
     
 if __name__ == '__main__':
     main()
