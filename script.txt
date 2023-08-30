@@ -1,1 +1,0 @@
-plink --simulate wgas.sim --out mydata --make-bed
