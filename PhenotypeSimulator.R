@@ -22,7 +22,7 @@ done
 '''
 
 # simulate phenotype with three phenotype components
-simulation <- runSimulation(N = 1000, P = 3, cNrSNP=10000, seed=43,
+simulation <- runSimulation(N = 100, P = 3, cNrSNP=10000, seed=43,
                            kinshipfile = kinshipfile,
                            format = "oxgen",
                            genoFilePrefix = genoFilePrefix,
