@@ -2,4 +2,5 @@ Models/*/*.txt
 Models/*.txt
 *.ped
 *.bed
-data/*
+data/ALL_1000G_phase1integrated_v3_impute
+data/ALL_1000G_phase1integrated_v3_impute.tgz
