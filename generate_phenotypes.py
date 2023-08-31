@@ -13,7 +13,7 @@ maf_causal_lower = 0.05
 torch.manual_seed(0)
 
 def CSEM(phenotype): # one-dimensional tensor
-    return abs(1 * phenotype)
+    return abs(0 * phenotype)
 
 # read genotype data
 (bim, fam, bed) = read_plink(datadir)
@@ -39,7 +39,7 @@ genetic_sd = torch.std(genetic_component)
 genetic_component = genetic_component / genetic_sd
 
 # random environmental noise with SD = 1
-environmental_noise = torch.randn(n_individuals)
+environmental_noise = torch.randn(n_individuals) * 0.5
 
 # true phenotype
 true_phenotypes = genetic_component + environmental_noise
@@ -63,11 +63,10 @@ df = pd.DataFrame({
 
 df_maf = pd.DataFrame({
     'maf_values': maf_values.numpy(),
-    'maf_filter': maf_filter.numpy(),
     'SNP_effect_sizes': SNP_effect_sizes.numpy()
 })
 
 # Export to CSV
 df.to_csv(outdir + '/phenotypes.csv', index=False)
 
-df_maf.to_csv(outdir + '/maf.csv', index=False)
+df_maf.to_csv(outdir + '/SNPs.csv', index=False)
