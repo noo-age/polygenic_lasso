@@ -102,7 +102,8 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
                 batch_vallosses.append(loss.item())
             val_losses.append(np.mean(batch_vallosses))
 
-        print(f'Epoch {epoch+1}/{epochs} => Train Loss: {train_losses[-1]}, Val Loss: {val_losses[-1]}')
+        if epoch % 10 == 0:
+            print(f'Epoch {epoch+1}/{epochs} => Train Loss: {train_losses[-1]}, Val Loss: {val_losses[-1]}')
 
     return train_losses, val_losses
 
