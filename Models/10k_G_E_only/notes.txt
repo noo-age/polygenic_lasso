@@ -1,0 +1,9 @@
+heritabiltiy: 0.8435986636808416
+env prop of total noise: 0.9999999999999998
+measurement noise prop of total noise: 8.558877797589797e-06
+L1 = 0.001
+
+# final r^2 of k-folded predictors
+0.43832711645139244
+0.46044305447681544
+0.4560729129592137

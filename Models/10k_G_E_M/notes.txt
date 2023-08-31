@@ -1,0 +1,9 @@
+0.8022596067457785 # heritability
+0.7575594744703832 # noise var explained by environ noise
+0.23993739635716146 # noise var explained by measurement noise
+L1 = 0.001
+
+# final r^2 of k-folded predictors
+0.3874207491972677
+0.41335966745510816
+0.40467578126321324
