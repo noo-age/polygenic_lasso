@@ -15,10 +15,10 @@ import os
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(0)
 
-epochs = 50
-batch_size = 1
-learning_rate = 0.0003
-l1_penalties = [0., 0., 0] # coefficient of penalty of weights
+epochs = 100
+batch_size = 32
+learning_rate = 0.00003
+l1_penalties = [0.0001, 0.001, 0.01] # coefficient of penalty of weights
 val_size = 0.2
 k = 3 # k-fold cross validation
 
@@ -28,13 +28,13 @@ directory = 'Models/10k_maf_filtered/'
 # Load data
 (bim, fam, bed) = read_plink('data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls')
 genotype_df = bed.compute().T
-genotype_tensor = 2-torch.tensor(genotype_df).to(device)
+genotype_tensor = 2-torch.tensor(genotype_df,dtype=torch.float32).to(device)
 
 pheno_data = pd.read_csv(directory + 'phenotypes.csv')
-phenotype_tensor = torch.tensor(pheno_data['observed_phenotype'].values).to(device)
+phenotype_tensor = torch.tensor(pheno_data['observed_phenotype'].values,dtype=torch.float32).to(device)
 
-dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1).to(device)
-print(dataset.dtype)
+dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1)
+
 # dataset = dataset[:x]
 
 n_SNPs = dataset.shape[1]-1
@@ -51,12 +51,12 @@ def get_batches(X, y, batch_size):
         
         batch_idx = indices[start:end]
         
-        yield X[batch_idx, :].to(device), y[batch_idx].to(device)
+        yield X[batch_idx, :], y[batch_idx]
 
 class LassoRegression(nn.Module):
     def __init__(self, n_features, l1_penalty):
         super(LassoRegression, self).__init__()
-        self.linear = nn.Linear(n_features, 1,bias=False).to(device)
+        self.linear = nn.Linear(n_features, 1,bias=False)
         self.l1_penalty = l1_penalty
 
     def forward(self, x):
@@ -85,7 +85,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
         batch_trainlosses = []
         for X_batch, y_batch in get_batches(X_train, y_train, batch_size):
             y_pred = model(X_batch)
-            loss = model.lasso_loss(y_pred, y_batch).to(device)
+            loss = model.lasso_loss(y_pred, y_batch)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -98,7 +98,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
         with torch.no_grad():
             for X_valbatch, y_valbatch in get_batches(X_val, y_val, batch_size):
                 y_pred = model(X_valbatch)
-                loss = model.lasso_loss(y_pred, y_valbatch).to(device)
+                loss = model.lasso_loss(y_pred, y_valbatch)
                 batch_vallosses.append(loss.item())
             val_losses.append(np.mean(batch_vallosses))
 
@@ -108,7 +108,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
 
 def main():
     
-    kfold = KFold(n_splits=k, shuffle=True)
+    kfold = KFold(n_splits=k, shuffle=False)
     
     for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
         # Split data
@@ -129,8 +129,12 @@ def main():
         # Save losses and pred|actual pairs to csv
         vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{fold}.csv')
         vd.save_correlation_to_csv(model(X_val), y_val, directory + f'correlation_{fold}.csv')
-
+        
+        # Save model effect sizes
+        vd.save_PGS_effect_sizes_to_csv(model.linear.weight.detach().cpu().squeeze(),directory + 'SNPs.csv',fold)
+        
         # Print model weights
+        print(model.linear.weight.detach().cpu().squeeze())
         model.print_weights()
         
     
