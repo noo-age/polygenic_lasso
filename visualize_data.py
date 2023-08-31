@@ -7,8 +7,10 @@ import seaborn as sns
 import math
 import csv
 import os
+from sklearn.metrics import r2_score
 
-directory = "Models/10k_maf_filtered/"
+
+directory = "Models/10k_G_E_M/"
 
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
@@ -29,6 +31,36 @@ def r_squared_from_file(filepath, variable1, variable2):
     tensor2 = torch.tensor(df[variable2].values)
 
     return r_correlation(tensor1, tensor2) ** 2
+
+
+def chunked_r_squared_from_file(filepath, variable1, variable2):
+    # Read the csv file
+    df = pd.read_csv(filepath)
+
+    # Convert the variables to tensors
+    tensor1 = torch.tensor(df[variable1].values, dtype=torch.float)
+    tensor2 = torch.tensor(df[variable2].values, dtype=torch.float)
+
+    # Normalize the first tensor
+    tensor1 = (tensor1 - tensor1.mean()) / tensor1.std()
+
+    # Create buckets based on standard deviation
+    over_3_sd_indices = torch.where(tensor1.abs() > 3)
+    between_2_and_1_sd_indices = torch.where((tensor1.abs() > 1) & (tensor1.abs() <= 2))
+    within_1_sd_indices = torch.where(tensor1.abs() <= 1)
+
+    bucket_indices = [over_3_sd_indices, between_2_and_1_sd_indices, within_1_sd_indices]
+    r_squared_values = []
+
+    # Calculate the r^2 correlation for each bucket
+    for indices in bucket_indices:
+        if len(indices[0]) > 0:
+            r_squared = r_correlation(tensor2[indices], tensor1[indices]) ** 2
+            r_squared_values.append(r_squared)
+        else:
+            r_squared_values.append(None)
+
+    return r_squared_values
 
 def save_losses_to_csv(train_losses, val_losses, filename):
     with open(filename, 'a', newline='') as f:
@@ -61,6 +93,19 @@ def plot_correlation(filepath):
     plt.xlabel('Predicted Trait')
     plt.ylabel('Actual Trait')
     plt.title('Predicted vs Actual Trait')
+
+    # Show the plot
+    plt.show()
+
+def plot_CSEM(filepath):
+    data = pd.read_csv(filepath)
+    
+    # Plot the data
+    plt.plot(data['true_phenotype'], data['measurement_noise'], 'o')
+    
+    # Setting labels and title
+    plt.xlabel('true_phenotype')
+    plt.ylabel('measurement_noise')
 
     # Show the plot
     plt.show()
@@ -106,12 +151,21 @@ def plot_losses(filepath):
 
 def main():
 
-    print(r_squared_from_file(directory + 'phenotypes.csv', 'genetic_component','observed_phenotype'))
+    #plot_CSEM(directory+'phenotypes.csv')
+
+    print('heritabiltiy:',r_squared_from_file(directory + 'phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
+    print('env prop of total noise:',r_squared_from_file(directory + 'phenotypes.csv', 'environmental_noise', 'total_noise')) 
+    print('measurement noise prop of total noise:',r_squared_from_file(directory + 'phenotypes.csv', 'measurement_noise', 'total_noise'))
+    
+    #plot_distribution(directory+'phenotypes.csv', 'measurement_noise')
+
     
     for i in range(3):
+        print(r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        print(chunked_r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
         plot_correlation(directory + f"correlation_{i}.csv")
         plot_losses(directory+f'losses_{i}.csv')
-        print(r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        
     
     
 if __name__ == '__main__':
