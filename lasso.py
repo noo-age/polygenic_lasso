@@ -12,60 +12,34 @@ import math
 import csv
 import os
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+torch.manual_seed(0)
+
 epochs = 50
 batch_size = 1
 learning_rate = 0.0003
-l1_penalties = [0.001, 0.01, 0.1] # coefficient of penalty of weights
+l1_penalties = [0., 0., 0] # coefficient of penalty of weights
 val_size = 0.2
 k = 3 # k-fold cross validation
 
-directory = 'Models/lasso_firstsim/'
+directory = 'Models/10k_maf_filtered/'
+
 
 # Load data
-'''
 (bim, fam, bed) = read_plink('data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls')
 genotype_df = bed.compute().T
-genotype_tensor = 2-torch.tensor(genotype_df)
-'''
-genotype_tensor = torch.zeros(100,50)
+genotype_tensor = 2-torch.tensor(genotype_df).to(device)
 
-phenotype_tensor = torch.zeros(genotype_tensor.shape[0]) #TODO
+pheno_data = pd.read_csv(directory + 'phenotypes.csv')
+phenotype_tensor = torch.tensor(pheno_data['observed_phenotype'].values).to(device)
 
-dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1)
+dataset = torch.cat((genotype_tensor,phenotype_tensor.reshape(phenotype_tensor.shape[0],1)),dim=1).to(device)
+print(dataset.dtype)
+# dataset = dataset[:x]
 
 n_SNPs = dataset.shape[1]-1
 n_individuals = dataset.shape[0]
-
-def r_correlation(tensor1, tensor2):
-    if tensor1.shape != tensor2.shape:
-        raise ValueError("Tensors must have the same shape")
-    tensor1_mean = torch.mean(tensor1)
-    tensor2_mean = torch.mean(tensor2)
-    tensor1_centered = tensor1 - tensor1_mean
-    tensor2_centered = tensor2 - tensor2_mean
-    correlation = torch.sum(tensor1_centered * tensor2_centered) / (torch.sqrt(torch.sum(tensor1_centered ** 2)) * torch.sqrt(torch.sum(tensor2_centered ** 2)))
-    return correlation.item()
-
-def train_test_split(X, y, test_size=val_size, random_state=None):
-    # Set the seed for reproducibility
-    if random_state is not None:
-        torch.manual_seed(random_state)
-
-    # Shuffle the indices
-    indices = torch.randperm(X.size(0))
-
-    # Calculate the number of test samples
-    test_count = int(test_size * X.size(0))
-
-    # Split the indices for train and test
-    test_indices = indices[:test_count]
-    train_indices = indices[test_count:]
-
-    # Create train and test sets
-    X_train, y_train = X[train_indices], y[train_indices]
-    X_test, y_test = X[test_indices], y[test_indices]
-
-    return X_train, X_test, y_train, y_test
+print(n_SNPs,n_individuals)
 
 def get_batches(X, y, batch_size):
     n_samples = X.shape[0]
@@ -77,12 +51,12 @@ def get_batches(X, y, batch_size):
         
         batch_idx = indices[start:end]
         
-        yield X[batch_idx, :], y[batch_idx]
+        yield X[batch_idx, :].to(device), y[batch_idx].to(device)
 
 class LassoRegression(nn.Module):
     def __init__(self, n_features, l1_penalty):
         super(LassoRegression, self).__init__()
-        self.linear = nn.Linear(n_features, 1,bias=False)
+        self.linear = nn.Linear(n_features, 1,bias=False).to(device)
         self.l1_penalty = l1_penalty
 
     def forward(self, x):
@@ -92,7 +66,7 @@ class LassoRegression(nn.Module):
         return nn.MSELoss()(y_pred, y) + self.l1_penalty * torch.norm(self.linear.weight, 1)
     
     def generate(self, x): # takes normal list and returns model prediction
-        return self(torch.tensor(x,dtype=torch.float)).item()
+        return self(torch.tensor(x,dtype=torch.float,device=device)).item()
     
     def print_weights(self):
         for name, param in self.named_parameters():
@@ -111,7 +85,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
         batch_trainlosses = []
         for X_batch, y_batch in get_batches(X_train, y_train, batch_size):
             y_pred = model(X_batch)
-            loss = model.lasso_loss(y_pred, y_batch)
+            loss = model.lasso_loss(y_pred, y_batch).to(device)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -124,7 +98,7 @@ def train(model, X_train, y_train, X_val, y_val, epochs, batch_size, learning_ra
         with torch.no_grad():
             for X_valbatch, y_valbatch in get_batches(X_val, y_val, batch_size):
                 y_pred = model(X_valbatch)
-                loss = model.lasso_loss(y_pred, y_valbatch)
+                loss = model.lasso_loss(y_pred, y_valbatch).to(device)
                 batch_vallosses.append(loss.item())
             val_losses.append(np.mean(batch_vallosses))
 
@@ -141,7 +115,7 @@ def main():
         X_train, X_val, y_train, y_val = dataset[train_ids,:-1], dataset[val_ids,:-1], dataset[train_ids,-1], dataset[val_ids,-1]
         
         # Load model
-        model = LassoRegression(n_SNPs, l1_penalty=l1_penalties[fold])
+        model = LassoRegression(n_SNPs, l1_penalty=l1_penalties[fold]).to(device)
         model_file = directory + f'model_{fold}.pth'
         if os.path.isfile(model_file) and input("load model: y/n") == 'y':
             model.load_state_dict(torch.load(model_file))
