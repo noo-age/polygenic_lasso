@@ -5,15 +5,18 @@ from pandas_plink import read_plink
 import math
 
 datadir = 'data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls'
-outdir = 'Models/10k_maf_filtered'
+outdir = 'Models/10k_G_E_only'
 
 maf_causal_upper = 0.2
 maf_causal_lower = 0.05
 
+genetic_scalar = .7
+environmental_noise_scalar = .3
+
 torch.manual_seed(0)
 
-def CSEM(phenotype): # one-dimensional tensor
-    return abs(0 * phenotype)
+def CSEM(phenotype, mean, std): # one-dimensional tensor
+    return (0.1 * ((phenotype - mean) / std) ** 2) # standard deviations of noise at those phenotype levels
 
 # read genotype data
 (bim, fam, bed) = read_plink(datadir)
@@ -36,29 +39,40 @@ n_SNPs = genotype_tensor.shape[1]
 SNP_effect_sizes = torch.randn(n_SNPs) * maf_filter
 genetic_component = torch.mv(genotype_tensor, SNP_effect_sizes) 
 genetic_sd = torch.std(genetic_component)
-genetic_component = genetic_component / genetic_sd
+genetic_mean = torch.mean(genetic_component)
+genetic_component = genetic_scalar * genetic_component / genetic_sd
 
 # random environmental noise with SD = 1
-environmental_noise = torch.randn(n_individuals) * 0.5
+environmental_noise = torch.randn(n_individuals)
+environmental_noise_mean = torch.mean(environmental_noise) 
+environmental_noise_sd = torch.std(environmental_noise) 
+environmental_noise = environmental_noise_scalar * (environmental_noise - environmental_noise_mean) / environmental_noise_sd
 
 # true phenotype
 true_phenotypes = genetic_component + environmental_noise
+true_phenotypes_mean = torch.mean(true_phenotypes)
+true_phenotypes_sd = torch.std(true_phenotypes)
 
 # Define measurement error for each individual based on CSEM
 # Assuming CSEM is a function that takes true phenotypes as input and returns a tensor of standard errors
-measurement_errors = CSEM(true_phenotypes) * torch.randn(n_individuals)
+measurement_noise = CSEM(true_phenotypes, true_phenotypes_mean, true_phenotypes_sd) * torch.randn(n_individuals)
+
+# Used to see variance of noise explained by environment vs measurement noise
+total_noise = environmental_noise #+ measurement_noise
 
 # Add measurement error to true phenotypes to get observed phenotypes
-observed_phenotypes = true_phenotypes + measurement_errors
+observed_phenotypes = true_phenotypes #+ measurement_noise
+normed_observed_phenotypes = (observed_phenotypes - torch.mean(observed_phenotypes)) / torch.std(observed_phenotypes)
 
 # Combine everything into a dataframe
 df = pd.DataFrame({
     'genetic_component': genetic_component.numpy(),
     'environmental_noise': environmental_noise.numpy(),
     'true_phenotype': true_phenotypes.numpy(),
-    'measurement_noise': measurement_errors.numpy(),
+    'measurement_noise': measurement_noise.numpy(),
+    'total_noise': total_noise.numpy(),
     'observed_phenotype': observed_phenotypes.numpy(),
-    
+    'normed_observed_phenotypes': normed_observed_phenotypes.numpy()
 })
 
 df_maf = pd.DataFrame({
