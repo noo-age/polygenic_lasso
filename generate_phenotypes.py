@@ -68,6 +68,6 @@ df_maf = pd.DataFrame({
 })
 
 # Export to CSV
-df.to_csv(outdir + '/simulated_phenotypes.csv', index=False)
+df.to_csv(outdir + '/phenotypes.csv', index=False)
 
 df_maf.to_csv(outdir + '/maf.csv', index=False)
