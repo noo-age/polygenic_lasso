@@ -8,6 +8,8 @@ import math
 import csv
 import os
 
+directory = "Models/10k_maf_filtered/"
+
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
         raise ValueError("Tensors must have the same shape")
@@ -39,16 +41,21 @@ def save_losses_to_csv(train_losses, val_losses, filename):
 def save_correlation_to_csv(predicted, actual, filename):
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(['predicted trait', 'actual trait'])
+        writer.writerow(['predicted_phenotype', 'observed_phenotype'])
         for i in range(len(predicted)):
             writer.writerow([predicted[i].item(), actual[i].item()])
+
+def save_PGS_effect_sizes_to_csv(weights,filename,iter):
+    df = pd.read_csv(filename)
+    df[f'PGS_effect_sizes_{iter}'] = weights.numpy()
+    df.to_csv(filename,index=False)
 
 def plot_correlation(filepath):
     # Read csv file
     data = pd.read_csv(filepath)
     
     # Plot the data
-    plt.plot(data['predicted trait'], data['actual trait'], 'o')
+    plt.plot(data['predicted_phenotype'], data['observed_phenotype'], 'o')
     
     # Setting labels and title
     plt.xlabel('Predicted Trait')
@@ -56,7 +63,7 @@ def plot_correlation(filepath):
     plt.title('Predicted vs Actual Trait')
 
     # Show the plot
-    plt.show(block=False)
+    plt.show()
 
 def plot_distribution(filepath, variable):
     # Read the csv file
@@ -98,13 +105,13 @@ def plot_losses(filepath):
     plt.show()
 
 def main():
-    plot_distribution("simulated_phenotypes.csv", "genetic_component")
-    plot_distribution("simulated_phenotypes.csv", "environmental_noise")
-    plot_distribution("simulated_phenotypes.csv", "true_phenotype")
-    plot_distribution("simulated_phenotypes.csv", "measurement_noise")
-    plot_distribution("simulated_phenotypes.csv", "observed_phenotype")
-    plot_distribution("simulated_phenotypes.csv", "maf_values")
-    print(r_squared_from_file("simulated_phenotypes.csv","genetic_component","observed_phenotype"))
+
+    print(r_squared_from_file(directory + 'phenotypes.csv', 'genetic_component','observed_phenotype'))
+    
+    for i in range(3):
+        plot_correlation(directory + f"correlation_{i}.csv")
+        plot_losses(directory+f'losses_{i}.csv')
+        print(r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
     
     
 if __name__ == '__main__':
