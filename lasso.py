@@ -17,12 +17,12 @@ torch.manual_seed(0)
 
 epochs = 100
 batch_size = 32
-learning_rate = 0.00003
-l1_penalties = [0.0001, 0.001, 0.01] # coefficient of penalty of weights
+learning_rate = 0.000003
+l1_penalties = [0.001, 0.001, 0.001] # coefficient of penalty of weights
 val_size = 0.2
 k = 3 # k-fold cross validation
 
-directory = 'Models/10k_maf_filtered/'
+directory = 'Models/10k_G_E_only/'
 
 
 # Load data
@@ -118,7 +118,7 @@ def main():
         # Load model
         model = LassoRegression(n_SNPs, l1_penalty=l1_penalties[fold]).to(device)
         model_file = directory + f'model_{fold}.pth'
-        if os.path.isfile(model_file) and input("load model: y/n") == 'y':
+        if os.path.isfile(model_file):# and input("load model: y/n") == 'y'
             model.load_state_dict(torch.load(model_file))
 
         # Train model
@@ -131,12 +131,14 @@ def main():
         vd.save_losses_to_csv(train_losses, val_losses, directory + f'losses_{fold}.csv')
         vd.save_correlation_to_csv(model(X_val), y_val, directory + f'correlation_{fold}.csv')
         
+
         # Save model effect sizes
         vd.save_PGS_effect_sizes_to_csv(model.linear.weight.detach().cpu().squeeze(),directory + 'SNPs.csv',fold)
-        
+        '''
         # Print model weights
         print(model.linear.weight.detach().cpu().squeeze())
         model.print_weights()
+        '''
         
     
 if __name__ == '__main__':
