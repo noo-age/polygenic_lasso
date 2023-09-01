@@ -22,7 +22,7 @@ l1_penalties = [0.001, 0.001, 0.001] # coefficient of penalty of weights
 val_size = 0.2
 k = 3 # k-fold cross validation
 
-directory = 'Models/10k_G_E_only/'
+directory = 'Models/G_E_M_normal/'
 
 
 # Load data
