@@ -3,20 +3,27 @@ import pandas as pd
 import numpy as np
 from pandas_plink import read_plink
 import math
+import visualize_data as vd
+
+'''
+Now normal
+'''
 
 datadir = 'data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls'
-outdir = 'Models/10k_G_E_only'
+outdir = 'Models/G_E_M_normal'
 
 maf_causal_upper = 0.2
 maf_causal_lower = 0.05
 
 genetic_scalar = .7
 environmental_noise_scalar = .3
+CSEM_scalar = 0.1
+normal_scalar = 0.17
 
 torch.manual_seed(0)
 
 def CSEM(phenotype, mean, std): # one-dimensional tensor
-    return (0.1 * ((phenotype - mean) / std) ** 2) # standard deviations of noise at those phenotype levels
+    return (CSEM_scalar * ((phenotype - mean) / std) ** 2) # standard deviations of noise at those phenotype levels
 
 # read genotype data
 (bim, fam, bed) = read_plink(datadir)
@@ -55,13 +62,14 @@ true_phenotypes_sd = torch.std(true_phenotypes)
 
 # Define measurement error for each individual based on CSEM
 # Assuming CSEM is a function that takes true phenotypes as input and returns a tensor of standard errors
-measurement_noise = CSEM(true_phenotypes, true_phenotypes_mean, true_phenotypes_sd) * torch.randn(n_individuals)
+#measurement_noise = CSEM(true_phenotypes, true_phenotypes_mean, true_phenotypes_sd) * torch.randn(n_individuals)
+measurement_noise = torch.randn(n_individuals) * normal_scalar
 
 # Used to see variance of noise explained by environment vs measurement noise
-total_noise = environmental_noise #+ measurement_noise
+total_noise = environmental_noise + measurement_noise
 
 # Add measurement error to true phenotypes to get observed phenotypes
-observed_phenotypes = true_phenotypes #+ measurement_noise
+observed_phenotypes = true_phenotypes + measurement_noise
 normed_observed_phenotypes = (observed_phenotypes - torch.mean(observed_phenotypes)) / torch.std(observed_phenotypes)
 
 # Combine everything into a dataframe
@@ -84,3 +92,7 @@ df_maf = pd.DataFrame({
 df.to_csv(outdir + '/phenotypes.csv', index=False)
 
 df_maf.to_csv(outdir + '/SNPs.csv', index=False)
+
+print('heritabiltiy:',vd.r_squared_from_file(outdir + '/phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
+print('env prop of total noise:',vd.r_squared_from_file(outdir + '/phenotypes.csv', 'environmental_noise', 'total_noise')) 
+print('measurement noise prop of total noise:',vd.r_squared_from_file(outdir + '/phenotypes.csv', 'measurement_noise', 'total_noise'))
