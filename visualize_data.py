@@ -10,7 +10,10 @@ import os
 from sklearn.metrics import r2_score
 
 
-directory = "Models/10k_G_E_M/"
+directory2= "Models/10k_G_E_M_.5/"
+directory3 = "Models/10k_G_E_M/"
+directory1 = "Models/10k_G_E_only/"
+directory4 = 'Models/G_E_M_normal/'
 
 def r_correlation(tensor1, tensor2):
     if tensor1.shape != tensor2.shape:
@@ -87,7 +90,7 @@ def plot_correlation(filepath):
     data = pd.read_csv(filepath)
     
     # Plot the data
-    plt.plot(data['predicted_phenotype'], data['observed_phenotype'], 'o')
+    plt.plot(data['predicted_phenotype'], data['observed_phenotype'], 'o',markersize=1)
     
     # Setting labels and title
     plt.xlabel('Predicted Trait')
@@ -101,7 +104,7 @@ def plot_CSEM(filepath):
     data = pd.read_csv(filepath)
     
     # Plot the data
-    plt.plot(data['true_phenotype'], data['measurement_noise'], 'o')
+    plt.plot(data['true_phenotype'], data['measurement_noise'], 'o',markersize=1)
     
     # Setting labels and title
     plt.xlabel('true_phenotype')
@@ -152,21 +155,47 @@ def plot_losses(filepath):
 def main():
 
     #plot_CSEM(directory+'phenotypes.csv')
-
-    print('heritabiltiy:',r_squared_from_file(directory + 'phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
-    print('env prop of total noise:',r_squared_from_file(directory + 'phenotypes.csv', 'environmental_noise', 'total_noise')) 
-    print('measurement noise prop of total noise:',r_squared_from_file(directory + 'phenotypes.csv', 'measurement_noise', 'total_noise'))
     
-    #plot_distribution(directory+'phenotypes.csv', 'measurement_noise')
-
+    print('heritabiltiy:',r_squared_from_file(directory3 + 'phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
+    print('env prop of total noise:',r_squared_from_file(directory3 + 'phenotypes.csv', 'environmental_noise', 'total_noise')) 
+    print('measurement noise prop of total noise:',r_squared_from_file(directory3 + 'phenotypes.csv', 'measurement_noise', 'total_noise'))
     
+    plot_distribution(directory3+'phenotypes.csv', 'measurement_noise')
+    
+    print(directory1)
     for i in range(3):
-        print(r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        print(chunked_r_squared_from_file(directory + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        plot_correlation(directory + f"correlation_{i}.csv")
-        plot_losses(directory+f'losses_{i}.csv')
-        
+        print(r_squared_from_file(directory1 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        print(chunked_r_squared_from_file(directory1 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        #plot_correlation(directory + f"correlation_{i}.csv")
+        #plot_losses(directory+f'losses_{i}.csv')
     
+    print(directory2)
+    for i in range(3):
+        print(r_squared_from_file(directory2 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        print(chunked_r_squared_from_file(directory2 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+    #plot_distribution(directory + 'phenotypes.csv','measurement_noise')
+    #plot_distribution(directory2 + 'phenotypes.csv','measurement_noise')   
+    
+    print(directory3)
+    for i in range(3):
+        print(r_squared_from_file(directory3 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        print(chunked_r_squared_from_file(directory3 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        #plot_correlation(directory1 + f"correlation_{i}.csv")
+        #plot_losses(directory1+f'losses_{i}.csv')
+
+    print(directory4)
+    for i in range(3):
+        print(r_squared_from_file(directory4 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        print(chunked_r_squared_from_file(directory4 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
+        plot_correlation(directory1 + f"correlation_{i}.csv")
+        plot_losses(directory1+f'losses_{i}.csv')
+
+    '''
+    
+    #plot_distribution(directory + 'phenotypes.csv','measurement_noise')
+    #plot_distribution(directory2 + 'phenotypes.csv','measurement_noise')  
+
+    ''' 
     
 if __name__ == '__main__':
     main()
