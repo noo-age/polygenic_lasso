@@ -1,0 +1,3 @@
+heritabiltiy: 0.8033069413568108
+env prop of total noise: 0.7531272388263227
+measurement noise prop of total noise: 0.24007128363186062
