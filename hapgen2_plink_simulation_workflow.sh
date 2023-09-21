@@ -1,5 +1,6 @@
-# Taken from https://github.com/HannahVMeyer/PhenotypeSimulator/blob/master/vignettes/Simulation-and-LinearModel.Rmd
+#!/bin/bash
 
+# Based off of https://github.com/HannahVMeyer/PhenotypeSimulator/blob/master/vignettes/Simulation-and-LinearModel.Rmd
 
 # set directory variables
 dir=~/code/polygenic_lasso/data
