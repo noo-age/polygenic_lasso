@@ -10,9 +10,12 @@ import os
 from sklearn.metrics import r2_score
 
 
-directory2= "Models/10k_G_E_M_.5/"
+
+directory1 = "Models/HighM_LowE_CSEM/"
+directory2= "Models/HighM_LowE_normal/"
+
 directory3 = "Models/10k_G_E_M/"
-directory1 = "Models/10k_G_E_only/"
+
 directory4 = 'Models/G_E_M_normal/'
 
 def r_correlation(tensor1, tensor2):
@@ -48,11 +51,14 @@ def chunked_r_squared_from_file(filepath, variable1, variable2):
     tensor1 = (tensor1 - tensor1.mean()) / tensor1.std()
 
     # Create buckets based on standard deviation
-    over_3_sd_indices = torch.where(tensor1.abs() > 3)
+    over_2_sd_indices = torch.where(tensor1.abs() > 2)
     between_2_and_1_sd_indices = torch.where((tensor1.abs() > 1) & (tensor1.abs() <= 2))
     within_1_sd_indices = torch.where(tensor1.abs() <= 1)
 
-    bucket_indices = [over_3_sd_indices, between_2_and_1_sd_indices, within_1_sd_indices]
+    bucket_indices = [over_2_sd_indices, between_2_and_1_sd_indices, within_1_sd_indices]
+    for indices in bucket_indices:
+        #print(len(indices[0]))
+        break
     r_squared_values = []
 
     # Calculate the r^2 correlation for each bucket
@@ -156,46 +162,11 @@ def main():
 
     #plot_CSEM(directory+'phenotypes.csv')
     
-    print('heritabiltiy:',r_squared_from_file(directory3 + 'phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
-    print('env prop of total noise:',r_squared_from_file(directory3 + 'phenotypes.csv', 'environmental_noise', 'total_noise')) 
-    print('measurement noise prop of total noise:',r_squared_from_file(directory3 + 'phenotypes.csv', 'measurement_noise', 'total_noise'))
-    
-    plot_distribution(directory3+'phenotypes.csv', 'measurement_noise')
-    
-    print(directory1)
-    for i in range(3):
-        print(r_squared_from_file(directory1 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        print(chunked_r_squared_from_file(directory1 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        #plot_correlation(directory + f"correlation_{i}.csv")
-        #plot_losses(directory+f'losses_{i}.csv')
-    
-    print(directory2)
-    for i in range(3):
-        print(r_squared_from_file(directory2 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        print(chunked_r_squared_from_file(directory2 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-    #plot_distribution(directory + 'phenotypes.csv','measurement_noise')
-    #plot_distribution(directory2 + 'phenotypes.csv','measurement_noise')   
-    
-    print(directory3)
-    for i in range(3):
-        print(r_squared_from_file(directory3 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        print(chunked_r_squared_from_file(directory3 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        #plot_correlation(directory1 + f"correlation_{i}.csv")
-        #plot_losses(directory1+f'losses_{i}.csv')
+    print('heritabiltiy:',r_squared_from_file(directory1 + 'phenotypes.csv', 'genetic_component','observed_phenotype')) #heritability
+    print('env prop of total noise:',r_squared_from_file(directory1 + 'phenotypes.csv', 'environmental_noise', 'total_noise')) 
+    print('measurement noise prop of total noise:',r_squared_from_file(directory1 + 'phenotypes.csv', 'measurement_noise', 'total_noise'))
 
-    print(directory4)
-    for i in range(3):
-        print(r_squared_from_file(directory4 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        print(chunked_r_squared_from_file(directory4 + f"correlation_{i}.csv","predicted_phenotype","observed_phenotype"))
-        plot_correlation(directory1 + f"correlation_{i}.csv")
-        plot_losses(directory1+f'losses_{i}.csv')
-
-    '''
     
-    #plot_distribution(directory + 'phenotypes.csv','measurement_noise')
-    #plot_distribution(directory2 + 'phenotypes.csv','measurement_noise')  
-
-    ''' 
     
 if __name__ == '__main__':
     main()
