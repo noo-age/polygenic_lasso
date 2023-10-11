@@ -6,7 +6,7 @@ import math
 import visualize_data as vd
 
 '''
-Now normal
+Specify datadir and outdir, as well as various parameters for phenotype generation. Output will be saved to a csv file. 
 '''
 
 datadir = 'data/ALL_1000G_phase1integrated_v3_impute/genotypes_genome_hapgen.controls'
